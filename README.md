@@ -24,7 +24,7 @@ This is a **Solana Token Launchpad** built using React and Solana web3 libraries
 
 If you haven’t initialized the project yet, run:
 
-```bash
+````bash
 npm create vite@latest
 cd your-project-name
 Then install dependencies:
@@ -81,3 +81,60 @@ Your GitHub Profile
 
 ⭐ Show your support!
 If you like this project, give it a ⭐ on GitHub.
+
+## Secure Pinata Upload Proxy (Production)
+
+**Why:** Never expose your Pinata API keys in the frontend. Use a backend or serverless function to proxy uploads.
+
+### Example: Express.js Upload Proxy
+
+Create a new file (e.g. `upload-proxy.js`):
+
+```js
+const express = require('express');
+const multer = require('multer');
+const fetch = require('node-fetch');
+const app = express();
+const upload = multer();
+
+const PINATA_API_KEY = process.env.PINATA_API_KEY;
+const PINATA_API_SECRET = process.env.PINATA_API_SECRET;
+
+app.post('/api/pinata/upload', upload.single('file'), async (req, res) => {
+  const formData = new FormData();
+  formData.append('file', req.file.buffer, req.file.originalname);
+  const pinataResp = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
+    method: 'POST',
+    headers: {
+      pinata_api_key: PINATA_API_KEY,
+      pinata_secret_api_key: PINATA_API_SECRET,
+    },
+    body: formData,
+  });
+  const data = await pinataResp.json();
+  res.json(data);
+});
+
+app.listen(3001, () => console.log('Proxy running on port 3001'));
+````
+
+- Deploy this server (or as a serverless function).
+- Set your Pinata keys in environment variables.
+- Change your frontend to POST to `/api/pinata/upload` instead of directly to Pinata.
+
+### For Vercel/Netlify
+
+- Use their serverless function format, but the logic is the same.
+- Never commit your API keys to the repo.
+
+---
+
+**Frontend usage:**
+
+- Change the upload endpoint in your code to your proxy URL (e.g. `/api/pinata/upload`).
+- Remove Pinata keys from the frontend.
+
+---
+
+**Contact:**
+For help integrating the proxy, ask your developer or reach out for support!
