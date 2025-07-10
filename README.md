@@ -10,19 +10,36 @@ This is a **Solana Token Launchpad** built using React and Solana web3 libraries
 - Generate metadata JSON and store it on Pinata
 - Uses Metaplex to link metadata with tokens
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Dependencies
 
 - **React JS**
-- **Solana Web3.js**
+- **Vite**
+- **@solana/web3.js**
 - **@solana/spl-token**
 - **@metaplex-foundation/mpl-token-metadata**
-- **Pinata API**
+- **Axios** (for Pinata API calls)
+- **dotenv** (for managing environment variables)
 
-## ⚙️ Installation
+### 📦 **Install all dependencies:**
 
-1. Clone the repository:
+If you haven’t initialized the project yet, run:
 
 ```bash
+npm create vite@latest
+cd your-project-name
+Then install dependencies:
+
+bash
+Copy
+Edit
+npm install
+npm install @solana/web3.js @solana/spl-token @metaplex-foundation/mpl-token-metadata axios dotenv
+⚙️ Setup
+Clone the repository:
+
+bash
+Copy
+Edit
 git clone https://github.com/username/solana-token-launchpad.git
 cd solana-token-launchpad
 Install dependencies:
@@ -53,7 +70,7 @@ Ensure your wallet is connected to the correct Solana network.
 
 Pinata credentials are required for uploading images and metadata.
 
-For production, secure your API keys using a backend proxy.
+For production, secure your API keys using a backend proxy or serverless function.
 
 📷 Demo
 
@@ -64,19 +81,3 @@ Your GitHub Profile
 
 ⭐ Show your support!
 If you like this project, give it a ⭐ on GitHub.
-
-yaml
-Copy
-Edit
-
----
-
-### ⚠️ **Important for `.env`:**
-
-| Variable | Use |
-|--|--|
-| **VITE_PINATA_API_KEY** | Your Pinata API Key |
-| **VITE_PINATA_API_SECRET** | Your Pinata API Secret |
-| **VITE_SOLANA_RPC_URL** | Your preferred Solana RPC URL |
-
----
