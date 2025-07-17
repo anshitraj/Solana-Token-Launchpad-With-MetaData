@@ -1012,3 +1012,56 @@ body,
     margin-bottom: 14px;
   }
 }
+
+@media (max-width: 480px) {
+  .token-launchpad-card,
+  .token-preview-below,
+  .wall-token-card {
+    padding: 10px 2vw 10px 2vw;
+    border-radius: 10px;
+    min-width: 0;
+    max-width: 100vw;
+    width: 98vw;
+    font-size: 1.08rem;
+  }
+  .form-group,
+  .form-row,
+  .switches-row {
+    gap: 10px !important;
+    margin-bottom: 10px !important;
+  }
+  .btn.main-btn {
+    font-size: 1.08rem;
+    padding: 12px 0;
+    min-height: 44px;
+    margin-bottom: 10px;
+  }
+  .modal-box {
+    max-width: 96vw;
+    padding: 18px 4vw;
+    font-size: 1.05rem;
+    overflow-y: auto;
+    max-height: 90vh;
+  }
+  .modal-overlay {
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+  .wall-of-tokens-grid {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .wall-title {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+  }
+  .topbar {
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 2vw 0 2vw;
+  }
+  body,
+  #root {
+    overflow-x: hidden;
+  }
+}

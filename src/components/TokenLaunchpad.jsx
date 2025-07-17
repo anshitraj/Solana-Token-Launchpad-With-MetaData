@@ -18,6 +18,21 @@ import {
 import { createInitializeInstruction, pack } from "@solana/spl-token-metadata";
 // Pinata integration: no import needed, use fetch
 
+// Function to save token data to backend
+async function saveTokenToBackend(tokenData) {
+  try {
+    const response = await fetch("http://localhost:5000/api/tokens", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(tokenData),
+    });
+    if (!response.ok) throw new Error("Failed to save token data");
+    return await response.json();
+  } catch (err) {
+    console.error("Error saving token to backend:", err);
+  }
+}
+
 export function TokenLaunchpad() {
   // UI state
   const [loading, setLoading] = useState(false);
@@ -357,6 +372,18 @@ export function TokenLaunchpad() {
       await wallet.sendTransaction(transaction3, connection);
 
       setSuccess({ mint: mintKeypair.publicKey.toBase58() });
+
+      // Save token data to backend
+      await saveTokenToBackend({
+        name,
+        symbol,
+        decimals,
+        supply,
+        description,
+        image: imageIpfsUrl,
+        optionalUrls: optionalUrls.filter((u) => u.url),
+        mint: mintKeypair.publicKey.toBase58(),
+      });
     } catch (err) {
       console.error("Token creation error:", err);
       let msg = "";

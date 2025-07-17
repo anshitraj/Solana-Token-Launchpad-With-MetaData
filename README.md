@@ -138,3 +138,21 @@ app.listen(3001, () => console.log('Proxy running on port 3001'));
 
 **Contact:**
 For help integrating the proxy, ask your developer or reach out for support!
+
+# MongoDB Atlas Backend Integration
+
+A backend server is now included for saving token data (name, symbol, etc.) to MongoDB Atlas. You must add your MongoDB Atlas connection string to a `.env` file in the `backend/` folder as follows:
+
+```
+MONGODB_URI=your_mongodb_atlas_connection_string
+```
+
+## Running the Backend
+
+1. `cd backend`
+2. `npm install`
+3. `npm run dev` (or `npm start` for production)
+
+The backend will run on `http://localhost:5000` by default.
+
+---
