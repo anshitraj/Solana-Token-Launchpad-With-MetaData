@@ -16,7 +16,36 @@ import {
   getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
 import { createInitializeInstruction, pack } from "@solana/spl-token-metadata";
-// Pinata integration: no import needed, use fetch
+
+// Enhanced loading component
+function LoadingSpinner() {
+  return (
+    <div className="loading-spinner">
+      <div className="spinner-ring"></div>
+      <div className="spinner-ring"></div>
+      <div className="spinner-ring"></div>
+    </div>
+  );
+}
+
+// Enhanced floating particles background
+function FloatingParticles() {
+  return (
+    <div className="floating-particles">
+      {[...Array(20)].map((_, i) => (
+        <div
+          key={i}
+          className="particle"
+          style={{
+            left: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 20}s`,
+            animationDuration: `${15 + Math.random() * 10}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 
 // Function to save token data to backend
 async function saveTokenToBackend(tokenData) {
@@ -56,6 +85,14 @@ export function TokenLaunchpad() {
   const [optionalUrls, setOptionalUrls] = useState([{ label: "", url: "" }]);
   const [showOptionalUrls, setShowOptionalUrls] = useState(false);
   const [imageError, setImageError] = useState("");
+  const [isFormValid, setIsFormValid] = useState(false);
+
+  // Form validation
+  useEffect(() => {
+    const isValid = name.trim() && symbol.trim() && supply && imagePreview;
+    setIsFormValid(isValid);
+  }, [name, symbol, supply, imagePreview]);
+
   // Image upload handler
   const handleImageChange = (e) => {
     setImageError("");
@@ -235,19 +272,23 @@ export function TokenLaunchpad() {
     setSuccess(null);
     setLoading(true);
     setUploadProgress({ image: 0, metadata: 0 });
+
     try {
       if (!wallet.publicKey) throw new Error("Wallet not connected");
       if (!imagePreview) throw new Error("Please upload an image");
+
       // 1. Upload image to Pinata (frontend, .env keys)
       const pinataApiKey = import.meta.env.VITE_PINATA_API_KEY;
       const pinataApiSecret = import.meta.env.VITE_PINATA_API_SECRET;
       if (!pinataApiKey || !pinataApiSecret)
         throw new Error("Pinata API key/secret not set");
+
       // Convert base64 to Blob
       const res = await fetch(imagePreview);
       const blob = await res.blob();
       const formData = new FormData();
       formData.append("file", blob, "token-image.png");
+
       // Upload to Pinata
       const imageData = await uploadToPinataWithProgress(
         "https://api.pinata.cloud/pinning/pinFileToIPFS",
@@ -258,6 +299,7 @@ export function TokenLaunchpad() {
       );
       if (!imageData.IpfsHash) throw new Error("Image upload to Pinata failed");
       const imageIpfsUrl = `https://gateway.pinata.cloud/ipfs/${imageData.IpfsHash}`;
+
 
       // 2. Build metadata JSON
       const metadataJson = {
@@ -460,15 +502,21 @@ export function TokenLaunchpad() {
 
   return (
     <div className="token-launchpad-bg">
+      <FloatingParticles />
+      
       {loading && (
         <div className="modal-overlay">
           <div className="modal-box">
-            <div style={{ marginBottom: 12 }}>
-              Uploading and creating token, please wait...
+            <LoadingSpinner />
+            <div style={{ marginBottom: 20, fontSize: '1.2rem', fontWeight: '600' }}>
+              🚀 Creating Your Token
+            </div>
+            <div style={{ marginBottom: 16, color: 'var(--text-secondary)' }}>
+              Please wait while we upload your assets and deploy your token to the Solana blockchain...
             </div>
             <div className="progress-group">
               <div className="progress-label">
-                Image Upload: {uploadProgress.image}%
+                📸 Image Upload: {uploadProgress.image}%
               </div>
               <div className="progress-bar">
                 <div
@@ -477,7 +525,7 @@ export function TokenLaunchpad() {
                 ></div>
               </div>
               <div className="progress-label">
-                Metadata Upload: {uploadProgress.metadata}%
+                📋 Metadata Upload: {uploadProgress.metadata}%
               </div>
               <div className="progress-bar">
                 <div
@@ -492,7 +540,12 @@ export function TokenLaunchpad() {
       {error && (
         <div className="modal-overlay">
           <div className="modal-box error">
-            {error} <button onClick={() => setError("")}>Close</button>
+            <div style={{ fontSize: '2rem', marginBottom: '16px' }}>❌</div>
+            <div style={{ fontSize: '1.2rem', fontWeight: '600', marginBottom: '16px' }}>
+              Token Creation Failed
+            </div>
+            <div style={{ marginBottom: '24px', color: 'var(--text-secondary)' }}>{error}</div>
+            <button onClick={() => setError("")}>Try Again</button>
           </div>
         </div>
       )}
@@ -505,8 +558,12 @@ export function TokenLaunchpad() {
                 imagePreview ||
                 "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
               }
+              name={name}
+              symbol={symbol}
             />
-            <div>Token created successfully!</div>
+            <div style={{ fontSize: '1.3rem', fontWeight: '700', marginBottom: '16px' }}>
+              🎉 Token Created Successfully!
+            </div>
             <div>
               Mint Address:
               <br />
@@ -518,7 +575,7 @@ export function TokenLaunchpad() {
               rel="noopener noreferrer"
               className="solscan-link"
             >
-              View on Solscan
+              🔍 View on Solscan
             </a>
             <div className="share-buttons-group">
               <a
@@ -529,9 +586,7 @@ export function TokenLaunchpad() {
                 rel="noopener noreferrer"
                 className="share-btn twitter"
               >
-                <span role="img" aria-label="Twitter">
-                  🐦
-                </span>{" "}
+                🐦
                 Share on Twitter
               </a>
               <a
@@ -544,35 +599,37 @@ export function TokenLaunchpad() {
                 rel="noopener noreferrer"
                 className="share-btn telegram"
               >
-                <span role="img" aria-label="Telegram">
-                  📢
-                </span>{" "}
+                📢
                 Share on Telegram
               </a>
             </div>
-            <button onClick={() => setSuccess(null)}>Close</button>
+            <button onClick={() => setSuccess(null)}>Create Another Token</button>
           </div>
         </div>
       )}
+
       <div className="topbar">
         <div className="logo-title">
-          <span className="logo-icon">🦋</span>
-          <span className="logo-text">SolMint.live</span>
+          <span className="logo-icon">⚡</span>
+          <span className="logo-text">SolanaLaunch</span>
         </div>
         <div className="topbar-links">
           <a href="#" className="topbar-link">
-            Blog
+            📚 Docs
           </a>
           <a href="#" className="topbar-link">
-            FAQ
+            💬 Support
           </a>
-          {/* Wallet button is handled by parent */}
+          <a href="#" className="topbar-link">
+            🏆 Leaderboard
+          </a>
         </div>
       </div>
+
       <div className="token-launchpad-container">
         <div className="token-launchpad-card">
           <div className="form-group">
-            <label>Token Template</label>
+            <label>🎨 Token Template</label>
             <select
               value={selectedTemplate}
               onChange={handleTemplateChange}
@@ -585,29 +642,33 @@ export function TokenLaunchpad() {
               ))}
             </select>
           </div>
-          <h2 className="form-title">Solana Token Creator</h2>
+          
+          <h2 className="form-title">Create Your Token</h2>
           <p className="form-subtitle">
-            Create your own SPL token with custom specifications
+            Launch your SPL token on Solana in minutes with professional-grade tools
           </p>
+          
           <form className="token-form" onSubmit={handleCreateToken}>
             <div className="form-row">
               <div className="form-group">
-                <label>Name</label>
+                <label>🏷️ Token Name</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  placeholder="Enter your token name"
                   required
                 />
               </div>
               <div className="form-group symbol-group">
-                <label>Symbol</label>
+                <label>🔤 Symbol</label>
                 <div className="symbol-input-row">
                   <input
                     type="text"
                     value={symbol}
                     maxLength={8}
                     onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                    placeholder="TOKEN"
                     required
                   />
                   <button
@@ -616,46 +677,50 @@ export function TokenLaunchpad() {
                     title="Generate random symbol"
                     onClick={handleDiceClick}
                   >
-                    <span role="img" aria-label="dice">
-                      🎲
-                    </span>
+                    🎲
                   </button>
                 </div>
               </div>
             </div>
+            
             <div className="form-row">
               <div className="form-group">
-                <label>Decimals</label>
+                <label>🔢 Decimals</label>
                 <input
                   type="number"
                   min={0}
                   max={18}
                   value={decimals}
                   onChange={(e) => setDecimals(Number(e.target.value))}
+                  placeholder="6"
                   required
                 />
               </div>
               <div className="form-group">
-                <label>Supply</label>
+                <label>📊 Total Supply</label>
                 <input
                   type="number"
                   min={1}
                   value={supply}
                   onChange={(e) => setSupply(e.target.value)}
+                  placeholder="1000000"
                   required
                 />
               </div>
             </div>
+            
             <div className="form-group">
-              <label>Description</label>
+              <label>📝 Description</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                placeholder="Describe your token's purpose and utility..."
                 rows={3}
               />
             </div>
+            
             <div className="form-group image-upload-group">
-              <label>Image</label>
+              <label>🖼️ Token Image</label>
               <div
                 className={`image-upload-box${
                   imagePreview ? " has-image" : ""
@@ -668,11 +733,13 @@ export function TokenLaunchpad() {
                     className="image-preview"
                   />
                 ) : (
-                  <img
-                    src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
-                    alt="Default Token"
-                    className="image-preview placeholder"
-                  />
+                  <div className="image-upload-placeholder">
+                    <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📸</div>
+                    <div>Click to upload image</div>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                      PNG, JPG up to 2MB
+                    </div>
+                  </div>
                 )}
                 <input
                   type="file"
@@ -682,10 +749,11 @@ export function TokenLaunchpad() {
               </div>
               {imageError && <div className="input-error">{imageError}</div>}
             </div>
+            
             <div className="form-row switches-row">
               <div className="switch-group">
                 <label>
-                  Revoke Freeze <span className="required">(required)</span>
+                  🔒 Revoke Freeze <span className="required">(required)</span>
                 </label>
                 <label className="switch">
                   <input
@@ -696,11 +764,11 @@ export function TokenLaunchpad() {
                   <span className="slider"></span>
                 </label>
                 <span className="switch-desc">
-                  Allows you to create a liquidity pool
+                  ✅ Enables liquidity pool creation
                 </span>
               </div>
               <div className="switch-group">
-                <label>Revoke Mint</label>
+                <label>🚫 Revoke Mint</label>
                 <label className="switch">
                   <input
                     type="checkbox"
@@ -710,11 +778,11 @@ export function TokenLaunchpad() {
                   <span className="slider"></span>
                 </label>
                 <span className="switch-desc">
-                  Removes the ability to increase token supply
+                  🔐 Prevents future token minting
                 </span>
               </div>
               <div className="switch-group">
-                <label>Revoke Update</label>
+                <label>🛡️ Revoke Update</label>
                 <label className="switch">
                   <input
                     type="checkbox"
@@ -724,10 +792,11 @@ export function TokenLaunchpad() {
                   <span className="slider"></span>
                 </label>
                 <span className="switch-desc">
-                  Removes the ability to modify token metadata and authorities
+                  🔒 Locks metadata permanently
                 </span>
               </div>
             </div>
+            
             {(!revokeMint || !revokeUpdate) && (
               <div className="audit-warning">
                 {!revokeMint && (
@@ -744,13 +813,14 @@ export function TokenLaunchpad() {
                 )}
               </div>
             )}
+            
             <div className="optional-urls-section">
               <button
                 type="button"
                 className="optional-urls-toggle"
                 onClick={() => setShowOptionalUrls((v) => !v)}
               >
-                <span>{showOptionalUrls ? "▼" : "►"}</span> Optional URLs
+                <span>{showOptionalUrls ? "▼" : "►"}</span> 🔗 Optional URLs
               </button>
               {showOptionalUrls && (
                 <div className="optional-urls-fields">
@@ -793,9 +863,14 @@ export function TokenLaunchpad() {
                 </div>
               )}
             </div>
+            
             {wallet.connected ? (
-              <button type="submit" className="btn main-btn" disabled={loading}>
-                {loading ? "Creating..." : "Create Token"}
+              <button 
+                type="submit" 
+                className={`btn main-btn ${!isFormValid ? 'disabled' : ''}`}
+                disabled={loading || !isFormValid}
+              >
+                {loading ? "🚀 Creating..." : "🎯 Launch Token"}
               </button>
             ) : (
               <button
@@ -803,17 +878,18 @@ export function TokenLaunchpad() {
                 className="btn main-btn"
                 onClick={() => setWalletModalVisible(true)}
               >
-                Select Wallet
+                🔗 Connect Wallet
               </button>
             )}
+            
             <div className="cost-estimator">
               {costLoading ? (
-                <span>Estimating cost...</span>
+                <span>💰 Estimating cost...</span>
               ) : costError ? (
                 <span className="input-error">{costError}</span>
               ) : (
                 <>
-                  <span>Estimated Cost: </span>
+                  <span>💎 Estimated Cost: </span>
                   <b>{totalCost ? totalCost.toFixed(4) : "-"} SOL</b>
                   <span className="cost-estimator-details">
                     {" "}
@@ -823,6 +899,7 @@ export function TokenLaunchpad() {
               )}
             </div>
           </form>
+          
           <div
             className={`token-preview-card token-preview-below ${previewBgClass}`}
           >
@@ -830,11 +907,9 @@ export function TokenLaunchpad() {
               {imagePreview ? (
                 <img src={imagePreview} alt="Token" />
               ) : (
-                <img
-                  src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
-                  alt="Default Token"
-                  className="image-preview placeholder"
-                />
+                <div className="token-preview-placeholder">
+                  🪙
+                </div>
               )}
             </div>
             <div className="token-preview-info">
@@ -847,23 +922,141 @@ export function TokenLaunchpad() {
             </div>
           </div>
         </div>
+        
         <div className="token-launchpad-sidepanels">
           <div className="sidepanel info-panel">
-            <h3>Create Solana Token</h3>
+            <h3>🚀 Professional Token Launch</h3>
             <p>
-              Effortlessly create your Solana SPL Token with our easy form – no
-              coding required.
+              Launch your SPL token on Solana with enterprise-grade tools. 
+              No coding required – just fill out the form and deploy instantly.
               <br />
               <br />
-              Customize your Solana Token exactly the way you envision it. Less
-              than 5 minutes, at an affordable cost.
+              ⚡ Deploy in under 5 minutes<br />
+              💰 Affordable pricing<br />
+              🔒 Secure & audited<br />
+              🎨 Full customization
             </p>
           </div>
           <div className="sidepanel howto-panel">
-            <h3>How to use Solana Token Creator</h3>
+            <h3>📋 How It Works</h3>
             <ol>
-              <li>Specify the desired name for your Token.</li>
-              <li>Indicate the symbol (max 8 characters).</li>
+              <li>🏷️ Choose your token name and symbol</li>
+              <li>🔢 Set decimals and total supply</li>
+              <li>📝 Add description and upload image</li>
+              <li>🔒 Configure security settings</li>
+              <li>🔗 Add optional social links</li>
+              <li>🚀 Connect wallet and launch!</li>
+            </ol>
+            <div className="cost-box">
+              💎 Launch Cost: <b>~0.25 SOL</b><br />
+              <small>Includes all blockchain fees</small>
+            </div>
+          </div>
+          
+          <div className="sidepanel">
+            <h3>🏆 Why Choose Us?</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>⚡</span>
+                <span>Instant deployment</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>🔒</span>
+                <span>Security audited</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>💰</span>
+                <span>Lowest fees</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>🎨</span>
+                <span>Professional design</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>📞</span>
+                <span>24/7 support</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="wall-of-tokens-section">
+        <h2 className="wall-title">🏆 Recently Launched</h2>
+        <div className="wall-of-tokens-grid">
+          {wallOfTokens.map((token, idx) => (
+            <div className="wall-token-card" key={idx}>
+              <div className="wall-token-img">
+                <img src={token.image} alt={token.name} />
+              </div>
+              <div className="wall-token-info">
+                <div className="wall-token-name">{token.name}</div>
+                <div className="wall-token-symbol">{token.symbol}</div>
+                <div className="wall-token-supply">{token.supply} Supply</div>
+                <a
+                  href={`https://solscan.io/token/${token.mint}?cluster=devnet`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="solscan-link"
+                >
+                  🔍 View Details
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Enhanced AnimatedTokenReveal component
+function AnimatedTokenReveal({ image, name, symbol }) {
+  const audioRef = useRef(null);
+  
+  useEffect(() => {
+    // Play success sound
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {
+        // Ignore audio play errors (browser restrictions)
+      });
+    }
+  }, []);
+  
+  return (
+    <div className="animated-token-reveal">
+      <div className="token-reveal-icon">
+        <img src={image} alt="Token" />
+        <div className="token-reveal-shine" />
+      </div>
+      <div style={{ 
+        fontSize: '1.2rem', 
+        fontWeight: '700', 
+        marginBottom: '4px',
+        background: 'var(--primary-gradient)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text'
+      }}>
+        {name || 'Your Token'}
+      </div>
+      <div style={{ 
+        fontSize: '1rem', 
+        color: 'var(--accent-purple)',
+        fontWeight: '600'
+      }}>
+        ${symbol || 'SYMBOL'}
+      </div>
+      <audio
+        ref={audioRef}
+        src="https://cdn.pixabay.com/audio/2022/07/26/audio_124bfae3c7.mp3"
+        preload="auto"
+      />
+    </div>
+  );
+}
+
               <li>
                 Select the decimals quantity (default recommended 6 for all
                 tokens).
